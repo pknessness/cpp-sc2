@@ -32,13 +32,34 @@ if (APPLE)
     )
 endif ()
 
+# Function to apply patches silently
+function(apply_patch_silently)
+    execute_process(
+            COMMAND ${patch_executor}
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/civetweb"
+            RESULT_VARIABLE apply_result
+            ERROR_QUIET
+            OUTPUT_QUIET
+    )
+    if(NOT apply_result EQUAL 0)
+        message(WARNING "Ignoring error while applying patch: ${patch_file}")
+    else()
+        message(STATUS "Patch applied successfully: ${patch_file}")
+    endif()
+endfunction()
+
 FetchContent_Declare(
     civetweb
     GIT_REPOSITORY https://github.com/civetweb/civetweb.git
     GIT_TAG 1fb204ecc630515d53291f58955c799785cb90c7
-    PATCH_COMMAND ${patch_executor}
 )
-FetchContent_MakeAvailable(civetweb)
+
+FetchContent_GetProperties(civetweb)
+if(NOT civetweb_POPULATED)
+    apply_patch_silently()
+
+    FetchContent_MakeAvailable(civetweb)
+endif ()
 
 set_target_properties(civetweb-c-library PROPERTIES FOLDER contrib)
 
